@@ -1,0 +1,33 @@
+name: sec-data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 11 * * 1-5"
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch SEC EDGAR data
+        env:
+          SEC_UA: ${{ secrets.SEC_UA }}
+        run: python scripts/fetch_sec.py
+
+      - name: Commit results
+        run: |
+          git config user.name "sec-data-bot"
+          git config user.email "sec-data-bot@users.noreply.github.com"
+          git add data/
+          git commit -m "Update SEC data" || echo "nothing to commit"
+          git push
